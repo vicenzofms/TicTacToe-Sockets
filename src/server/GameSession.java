@@ -72,7 +72,6 @@ public class GameSession {
       finished = true;
       sendBoard();
       broadcast(Protocol.command(Protocol.STATUS, Protocol.DRAW));
-      broadcast(Protocol.command(Protocol.MESSAGE, "Empate."));
       requestRematch();
       return;
     }

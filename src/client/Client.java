@@ -12,6 +12,16 @@ public class Client {
   private static final String DEFAULT_HOST = "localhost";
   private static final int DEFAULT_PORT = 5000;
 
+  private static final String RESET  = "\033[0m";
+  private static final String BOLD   = "\033[1m";
+  private static final String DIM    = "\033[2m";
+  private static final String RED    = "\033[1;31m";
+  private static final String GREEN  = "\033[1;32m";
+  private static final String YELLOW = "\033[1;33m";
+  private static final String BLUE   = "\033[1;34m";
+  private static final String CYAN   = "\033[1;36m";
+  private static final String GREY   = "\033[2;37m";
+
   public static void main(String[] args) {
     String host = args.length > 0 ? args[0] : DEFAULT_HOST;
     int port = args.length > 1 ? Integer.parseInt(args[1]) : DEFAULT_PORT;
@@ -24,8 +34,8 @@ public class Client {
         BufferedReader keyboard = new BufferedReader(new InputStreamReader(System.in));
         PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
 
-      System.out.println("Conectado ao servidor " + host + ":" + port + ".");
-      System.out.println("Digite uma posicao de 1 a 9 quando for sua vez, ou 'sair' para encerrar.");
+      System.out.println(CYAN + "Conectado ao servidor " + host + ":" + port + "." + RESET);
+      System.out.println(DIM + "Digite uma posicao de 1 a 9 quando for sua vez, ou 'sair' para encerrar." + RESET);
 
       String line;
       while ((line = serverIn.readLine()) != null) {
@@ -35,15 +45,17 @@ public class Client {
         }
       }
     } catch (IOException e) {
-      System.err.println("Erro no cliente: " + e.getMessage());
+      System.err.println(RED + "Erro no cliente: " + e.getMessage() + RESET);
     } catch (NumberFormatException e) {
-      System.err.println("Porta invalida. Use um numero inteiro.");
+      System.err.println(RED + "Porta invalida. Use um numero inteiro." + RESET);
     }
   }
 
   private boolean handleServerMessage(String line, BufferedReader keyboard, PrintWriter out) throws IOException {
     if (line.startsWith(Protocol.ASSIGN + Protocol.SEPARATOR)) {
-      System.out.println("Voce e o jogador " + valueOf(line) + ".");
+      String symbol = valueOf(line);
+      String colored = symbol.equals("X") ? RED + "X" + RESET : BLUE + "O" + RESET;
+      System.out.println("Voce e o jogador " + colored + ".");
       return true;
     }
 
@@ -62,7 +74,7 @@ public class Client {
     }
 
     if (line.startsWith(Protocol.ERROR + Protocol.SEPARATOR)) {
-      System.out.println("Erro: " + valueOf(line));
+      System.out.println(RED + "Erro: " + valueOf(line) + RESET);
       return true;
     }
 
@@ -73,7 +85,7 @@ public class Client {
   private boolean handleStatus(String status, BufferedReader keyboard, PrintWriter out) throws IOException {
     switch (status) {
       case Protocol.YOUR_TURN:
-        System.out.print("Sua vez. Escolha uma posicao (1-9): ");
+        System.out.print(GREEN + "Sua vez. Escolha uma posicao (1-9): " + RESET);
         String input = keyboard.readLine();
         if (input == null || input.trim().equalsIgnoreCase("sair") || input.trim().equalsIgnoreCase("quit")) {
           out.println(Protocol.QUIT);
@@ -82,24 +94,24 @@ public class Client {
         out.println(Protocol.command(Protocol.MOVE, input.trim()));
         return true;
       case Protocol.WAIT:
-        System.out.println("Aguardando jogada do outro jogador...");
+        System.out.println(YELLOW + "Aguardando jogada do outro jogador..." + RESET);
         return true;
       case Protocol.WIN:
-        System.out.println("Você venceu!");
+        System.out.println(GREEN + BOLD + "Você venceu!" + RESET);
         return true;
       case Protocol.LOSE:
-        System.out.println("Você perdeu.");
+        System.out.println(RED + "Você perdeu." + RESET);
         return true;
       case Protocol.DRAW:
-        System.out.println("Empate.");
+        System.out.println(YELLOW + "Empate!" + RESET);
         return true;
       case Protocol.REMATCH_REQUEST:
-        System.out.print("Deseja jogar novamente? (s/n): ");
+        System.out.print(CYAN + "Deseja jogar novamente? (s/n): " + RESET);
         String rematchInput = keyboard.readLine();
         out.println(Protocol.command(Protocol.REMATCH, isAffirmative(rematchInput) ? "sim" : "nao"));
         return true;
       case Protocol.OPPONENT_LEFT:
-        System.out.println("O outro jogador desconectou. Partida encerrada.");
+        System.out.println(YELLOW + "O outro jogador desconectou. Partida encerrada." + RESET);
         return false;
       default:
         System.out.println("Status: " + status);
@@ -127,9 +139,9 @@ public class Client {
 
     for (int row = 0; row < 3; row++) {
       int base = row * 3;
-      System.out.println(" " + cell(board, base) + " | " + cell(board, base + 1) + " | " + cell(board, base + 2));
+      System.out.println(" " + cell(board, base) + DIM + " | " + RESET + cell(board, base + 1) + DIM + " | " + RESET + cell(board, base + 2));
       if (row < 2) {
-        System.out.println("---+---+---");
+        System.out.println(DIM + "---+---+---" + RESET);
       }
     }
     System.out.println();
@@ -137,9 +149,15 @@ public class Client {
 
   private String cell(String board, int index) {
     if (index >= board.length() || board.charAt(index) == '_') {
-      return String.valueOf(index + 1);
+      return GREY + (index + 1) + RESET;
     }
 
-    return String.valueOf(board.charAt(index));
+    char c = board.charAt(index);
+    if (c == 'X') {
+      return RED + c + RESET;
+    } else if (c == 'O') {
+      return BLUE + c + RESET;
+    }
+    return String.valueOf(c);
   }
 }
