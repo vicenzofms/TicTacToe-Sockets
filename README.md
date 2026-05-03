@@ -1,6 +1,26 @@
-# TicTacToe-Sockets (Matéria de Redes)
+# TicTacToe-Sockets
 
-Jogo da Velha para dois jogadores feito em Java com sockets TCP. O servidor é o árbitro da partida: recebe jogadas, valida o tabuleiro, controla os turnos e informa o resultado aos clientes.
+> Jogo da Velha para dois jogadores via rede, feito em Java com sockets TCP.  
+> Desenvolvido como trabalho prático da matéria de **Redes de Computadores**.
+
+![Java](https://img.shields.io/badge/Java-8+-007ec6?style=for-the-badge&logo=openjdk&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-opcional-007ec6?style=for-the-badge&logo=docker&logoColor=white)
+![License](https://img.shields.io/badge/Licença-MIT-007ec6?style=for-the-badge&logo=opensourceinitiative&logoColor=white)
+
+---
+
+## Sobre o Projeto
+
+Aplicação cliente-servidor onde dois jogadores se conectam a um servidor central e jogam Jogo da Velha em tempo real. O servidor é o árbitro da partida: recebe jogadas, valida o tabuleiro, controla os turnos e informa o resultado aos clientes via protocolo de texto puro sobre TCP.
+
+---
+
+## Tecnologias
+
+- **Java** (JDK 8+) — linguagem principal, sockets TCP nativos
+- **Docker** — containerização do servidor (opcional)
+
+---
 
 ## Estrutura
 
@@ -19,11 +39,14 @@ Jogo da Velha para dois jogadores feito em Java com sockets TCP. O servidor é o
         └── Server.java
 ```
 
-## Requisitos
+---
+
+## Pré-requisitos
 
 - Java JDK 8 ou superior
-- Terminal Linux, WSL2 ou equivalente
-- Docker opcional, apenas para rodar o servidor em container
+- Docker (opcional, apenas para rodar o servidor em container)
+
+---
 
 ## Compilar
 
@@ -33,50 +56,58 @@ Na raiz do projeto:
 javac -d out src/common/Protocol.java src/server/Board.java src/server/GameSession.java src/server/Server.java src/client/Client.java
 ```
 
-## Rodar
+---
+
+## Executar
 
 Abra três terminais na raiz do projeto.
 
-### 1. Servidor
+**Terminal 1 — Servidor:**
 
 ```bash
 java -cp out server.Server
 ```
 
-A porta padrão é `5000`. Para usar outra porta:
+A porta padrão é `5000`. Para usar outra:
 
 ```bash
 java -cp out server.Server 6000
 ```
 
-### 2. Jogador 1
+**Terminal 2 — Jogador 1:**
 
 ```bash
 java -cp out client.Client localhost 5000
 ```
 
-### 3. Jogador 2
+**Terminal 3 — Jogador 2:**
 
 ```bash
 java -cp out client.Client localhost 5000
 ```
 
-O primeiro cliente conectado joga com `X`. O segundo joga com `O`.
+O primeiro cliente conectado joga com `X`, o segundo com `O`.
 
-## Rodar o servidor com Docker
+---
+
+## Docker
+
+Para rodar o servidor em container:
 
 ```bash
-docker build -t jogo-da-velha-rede .
-docker run --rm -p 5000:5000 jogo-da-velha-rede
+docker build -t tictactoe-server .
+docker run --rm -p 5000:5000 tictactoe-server
 ```
 
-Depois, rode os dois clientes normalmente no host:
+Os clientes rodam normalmente no host:
 
 ```bash
 java -cp out client.Client localhost 5000
 ```
 
-## Como jogar
+---
+
+## Como Jogar
 
 Use as posições de `0` a `8`:
 
@@ -88,48 +119,40 @@ Use as posições de `0` a `8`:
  6 | 7 | 8
 ```
 
-Quando for sua vez, digite a posição desejada e pressione Enter.
+Quando for sua vez, digite a posição e pressione Enter:
 
 ```text
 Sua vez. Escolha uma posicao (0-8): 4
 ```
 
-Para sair:
+Para sair, digite `sair` ou `quit`.
 
-```text
-sair
-```
+---
 
-ou:
+## Arquitetura
 
-```text
-quit
-```
-
-## Funcionamento
-
-A arquitetura é cliente-servidor centralizada.
+Arquitetura cliente-servidor centralizada com threads por jogador.
 
 - `Server` abre uma porta TCP e aguarda conexões.
-- A cada dois clientes conectados, uma `GameSession` é criada.
+- A cada dois clientes conectados, uma `GameSession` é criada em uma thread dedicada.
 - Cada jogador é atendido por uma thread própria no servidor.
-- O cliente envia apenas comandos simples, como `MOVE:4`.
-- O servidor valida a jogada, atualiza o `Board` e envia o novo estado para ambos.
-- O turno alterna entre `X` e `O`.
+- O cliente envia comandos simples (`MOVE:4`); o servidor valida, atualiza o `Board` e transmite o novo estado para ambos.
 - O servidor detecta vitória, empate e desconexão.
+
+---
 
 ## Protocolo
 
 Mensagens de texto puro, uma por linha.
 
-Cliente para servidor:
+**Cliente → Servidor:**
 
 ```text
 MOVE:4
 QUIT
 ```
 
-Servidor para cliente:
+**Servidor → Cliente:**
 
 ```text
 ASSIGN:X
@@ -144,13 +167,13 @@ MESSAGE:Partida iniciada. Jogador X começa.
 ERROR:Posição invalida ou ocupada.
 ```
 
-No `BOARD`, `_` representa casa vazia.
+No campo `BOARD`, `_` representa casa vazia:
 
 ```text
 BOARD:XO_X_O__X
 ```
 
-Representa:
+Equivale a:
 
 ```text
  X | O | 2
@@ -159,3 +182,19 @@ Representa:
 ---+---+---
  6 | 7 | X
 ```
+
+---
+
+## Contribuintes
+
+| Nome | GitHub |
+|------|--------|
+| Henrique Carvalho | [@henriquegdc](https://github.com/henriquegdc) |
+| Renato Douglas | [@RenatoDNS](https://github.com/RenatoDNS) |
+| Vicenzo Fonseca | [@vicenzofms](https://github.com/vicenzofms) |
+
+---
+
+## Licença
+
+Distribuído sob a licença MIT.
