@@ -109,23 +109,31 @@ java -cp out client.Client localhost 5000
 
 ## Como Jogar
 
-Use as posições de `0` a `8`:
+Use as posições de `1` a `9`:
 
 ```text
- 0 | 1 | 2
+ 1 | 2 | 3
 ---+---+---
- 3 | 4 | 5
+ 4 | 5 | 6
 ---+---+---
- 6 | 7 | 8
+ 7 | 8 | 9
 ```
 
 Quando for sua vez, digite a posição e pressione Enter:
 
 ```text
-Sua vez. Escolha uma posicao (0-8): 4
+Sua vez. Escolha uma posicao (1-9): 5
 ```
 
 Para sair, digite `sair` ou `quit`.
+
+Ao final da partida, cada jogador será perguntado se deseja uma revanche:
+
+```text
+Deseja jogar novamente? (s/n):
+```
+
+Se os dois jogadores responderem sim, uma nova partida será iniciada. Se qualquer jogador recusar, o jogo será encerrado.
 
 ---
 
@@ -136,8 +144,9 @@ Arquitetura cliente-servidor centralizada com threads por jogador.
 - `Server` abre uma porta TCP e aguarda conexões.
 - A cada dois clientes conectados, uma `GameSession` é criada em uma thread dedicada.
 - Cada jogador é atendido por uma thread própria no servidor.
-- O cliente envia comandos simples (`MOVE:4`); o servidor valida, atualiza o `Board` e transmite o novo estado para ambos.
+- O cliente envia comandos simples (`MOVE:5`); o servidor valida, atualiza o `Board` e transmite o novo estado para ambos.
 - O servidor detecta vitória, empate e desconexão.
+- Ao fim de uma partida, o servidor pergunta aos dois jogadores se desejam uma revanche e reinicia apenas se ambos aceitarem.
 
 ---
 
@@ -148,7 +157,9 @@ Mensagens de texto puro, uma por linha.
 **Cliente → Servidor:**
 
 ```text
-MOVE:4
+MOVE:5
+REMATCH:sim
+REMATCH:nao
 QUIT
 ```
 
@@ -162,6 +173,7 @@ STATUS:WAIT
 STATUS:WIN
 STATUS:LOSE
 STATUS:DRAW
+STATUS:REMATCH_REQUEST
 STATUS:OPPONENT_LEFT
 MESSAGE:Partida iniciada. Jogador X começa.
 ERROR:Posição invalida ou ocupada.
@@ -176,11 +188,11 @@ BOARD:XO_X_O__X
 Equivale a:
 
 ```text
- X | O | 2
+ X | O | 3
 ---+---+---
- X | 4 | O
+ X | 5 | O
 ---+---+---
- 6 | 7 | X
+ 7 | 8 | X
 ```
 
 ---

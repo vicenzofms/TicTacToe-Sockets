@@ -8,6 +8,7 @@ public final class Protocol {
     public static final String ASSIGN = "ASSIGN";
     public static final String ERROR = "ERROR";
     public static final String QUIT = "QUIT";
+    public static final String REMATCH = "REMATCH";
 
     public static final String YOUR_TURN = "YOUR_TURN";
     public static final String WAIT = "WAIT";
@@ -15,6 +16,7 @@ public final class Protocol {
     public static final String DRAW = "DRAW";
     public static final String LOSE = "LOSE";
     public static final String OPPONENT_LEFT = "OPPONENT_LEFT";
+    public static final String REMATCH_REQUEST = "REMATCH_REQUEST";
 
     public static final String SEPARATOR = ":";
 

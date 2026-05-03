@@ -5,6 +5,10 @@ public class Board {
     private final char[] cells = new char[SIZE];
 
     public Board() {
+        reset();
+    }
+
+    public void reset() {
         for (int i = 0; i < SIZE; i++) {
             cells[i] = '_';
         }

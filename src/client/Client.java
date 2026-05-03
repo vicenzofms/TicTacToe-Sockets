@@ -25,7 +25,7 @@ public class Client {
         PrintWriter out = new PrintWriter(socket.getOutputStream(), true)) {
 
       System.out.println("Conectado ao servidor " + host + ":" + port + ".");
-      System.out.println("Digite uma posicao de 0 a 8 quando for sua vez, ou 'sair' para encerrar.");
+      System.out.println("Digite uma posicao de 1 a 9 quando for sua vez, ou 'sair' para encerrar.");
 
       String line;
       while ((line = serverIn.readLine()) != null) {
@@ -73,7 +73,7 @@ public class Client {
   private boolean handleStatus(String status, BufferedReader keyboard, PrintWriter out) throws IOException {
     switch (status) {
       case Protocol.YOUR_TURN:
-        System.out.print("Sua vez. Escolha uma posicao (0-8): ");
+        System.out.print("Sua vez. Escolha uma posicao (1-9): ");
         String input = keyboard.readLine();
         if (input == null || input.trim().equalsIgnoreCase("sair") || input.trim().equalsIgnoreCase("quit")) {
           out.println(Protocol.QUIT);
@@ -86,13 +86,18 @@ public class Client {
         return true;
       case Protocol.WIN:
         System.out.println("Você venceu!");
-        return false;
+        return true;
       case Protocol.LOSE:
         System.out.println("Você perdeu.");
-        return false;
+        return true;
       case Protocol.DRAW:
         System.out.println("Empate.");
-        return false;
+        return true;
+      case Protocol.REMATCH_REQUEST:
+        System.out.print("Deseja jogar novamente? (s/n): ");
+        String rematchInput = keyboard.readLine();
+        out.println(Protocol.command(Protocol.REMATCH, isAffirmative(rematchInput) ? "sim" : "nao"));
+        return true;
       case Protocol.OPPONENT_LEFT:
         System.out.println("O outro jogador desconectou. Partida encerrada.");
         return false;
@@ -102,13 +107,24 @@ public class Client {
     }
   }
 
+  private boolean isAffirmative(String value) {
+    if (value == null) {
+      return false;
+    }
+
+    String answer = value.trim().toLowerCase();
+    return answer.equals("s") || answer.equals("sim") || answer.equals("y") || answer.equals("yes");
+  }
+
   private String valueOf(String line) {
     int separatorIndex = line.indexOf(Protocol.SEPARATOR);
     return separatorIndex >= 0 ? line.substring(separatorIndex + 1) : "";
   }
 
   private void printBoard(String board) {
-    System.out.println();
+    System.out.print("\033[H\033[2J");
+    System.out.flush();
+
     for (int row = 0; row < 3; row++) {
       int base = row * 3;
       System.out.println(" " + cell(board, base) + " | " + cell(board, base + 1) + " | " + cell(board, base + 2));
@@ -121,7 +137,7 @@ public class Client {
 
   private String cell(String board, int index) {
     if (index >= board.length() || board.charAt(index) == '_') {
-      return String.valueOf(index);
+      return String.valueOf(index + 1);
     }
 
     return String.valueOf(board.charAt(index));

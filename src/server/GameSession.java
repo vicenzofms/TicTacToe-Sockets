@@ -14,6 +14,9 @@ public class GameSession {
   private final Board board = new Board();
   private char currentTurn = 'X';
   private boolean finished = false;
+  private boolean closing = false;
+  private Boolean rematchX;
+  private Boolean rematchO;
 
   public GameSession(Socket socketX, Socket socketO) throws IOException {
     this.playerX = new PlayerHandler(socketX, 'X');
@@ -43,14 +46,14 @@ public class GameSession {
 
     int position;
     try {
-      position = Integer.parseInt(value.trim());
+      position = Integer.parseInt(value.trim()) - 1;
     } catch (NumberFormatException e) {
-      player.send(Protocol.command(Protocol.ERROR, "Jogada invalida. Use um numero de 0 a 8."));
+      player.send(Protocol.command(Protocol.ERROR, "Jogada invalida. Use um numero de 1 a 9."));
       return;
     }
 
     if (!board.makeMove(position, player.symbol)) {
-      player.send(Protocol.command(Protocol.ERROR, "Posição invalida ou ocupada."));
+      player.send(Protocol.command(Protocol.ERROR, "Posição invalida ou ocupada. Use uma posição de 1 a 9."));
       sendState();
       return;
     }
@@ -61,7 +64,7 @@ public class GameSession {
       player.send(Protocol.command(Protocol.STATUS, Protocol.WIN));
       opponentOf(player).send(Protocol.command(Protocol.STATUS, Protocol.LOSE));
       broadcast(Protocol.command(Protocol.MESSAGE, "Jogador " + player.symbol + " venceu."));
-      closeSockets();
+      requestRematch();
       return;
     }
 
@@ -70,7 +73,7 @@ public class GameSession {
       sendBoard();
       broadcast(Protocol.command(Protocol.STATUS, Protocol.DRAW));
       broadcast(Protocol.command(Protocol.MESSAGE, "Empate."));
-      closeSockets();
+      requestRematch();
       return;
     }
 
@@ -79,10 +82,11 @@ public class GameSession {
   }
 
   private synchronized void handleDisconnect(PlayerHandler player) {
-    if (finished) {
+    if (closing) {
       return;
     }
 
+    closing = true;
     finished = true;
     PlayerHandler opponent = opponentOf(player);
     opponent.send(Protocol.command(Protocol.STATUS, Protocol.OPPONENT_LEFT));
@@ -98,6 +102,53 @@ public class GameSession {
 
   private void sendBoard() {
     broadcast(Protocol.command(Protocol.BOARD, board.serialize()));
+  }
+
+  private synchronized void requestRematch() {
+    rematchX = null;
+    rematchO = null;
+    broadcast(Protocol.command(Protocol.STATUS, Protocol.REMATCH_REQUEST));
+  }
+
+  private synchronized void handleRematch(PlayerHandler player, String value) {
+    if (!finished) {
+      player.send(Protocol.command(Protocol.ERROR, "A partida ainda nao terminou."));
+      return;
+    }
+
+    boolean accepted = isAffirmative(value);
+    if (player.symbol == 'X') {
+      rematchX = accepted;
+    } else {
+      rematchO = accepted;
+    }
+
+    player.send(Protocol.command(Protocol.MESSAGE, accepted ? "Voce aceitou a revanche." : "Voce recusou a revanche."));
+
+    if (rematchX == null || rematchO == null) {
+      player.send(Protocol.command(Protocol.MESSAGE, "Aguardando resposta do outro jogador..."));
+      return;
+    }
+
+    if (rematchX && rematchO) {
+      board.reset();
+      currentTurn = 'X';
+      finished = false;
+      rematchX = null;
+      rematchO = null;
+      broadcast(Protocol.command(Protocol.MESSAGE, "Revanche iniciada. Jogador X começa."));
+      sendState();
+      return;
+    }
+
+    closing = true;
+    broadcast(Protocol.command(Protocol.MESSAGE, "Revanche recusada. Partida encerrada."));
+    closeSockets();
+  }
+
+  private boolean isAffirmative(String value) {
+    String answer = value.trim().toLowerCase();
+    return answer.equals("s") || answer.equals("sim") || answer.equals("y") || answer.equals("yes");
   }
 
   private void broadcast(String message) {
@@ -139,10 +190,13 @@ public class GameSession {
 
           if (line.startsWith(Protocol.MOVE + Protocol.SEPARATOR)) {
             handleMove(this, line.substring((Protocol.MOVE + Protocol.SEPARATOR).length()));
+          } else if (line.startsWith(Protocol.REMATCH + Protocol.SEPARATOR)) {
+            handleRematch(this, line.substring((Protocol.REMATCH + Protocol.SEPARATOR).length()));
           } else {
             send(Protocol.command(Protocol.ERROR, "Comando desconhecido."));
           }
         }
+        handleDisconnect(this);
       } catch (IOException e) {
         handleDisconnect(this);
       } finally {
