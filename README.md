@@ -1,4 +1,4 @@
-# Jogo da Velha em Rede
+# TicTacToe-Sockets (Matéria de Redes)
 
 Jogo da Velha para dois jogadores feito em Java com sockets TCP. O servidor é o árbitro da partida: recebe jogadas, valida o tabuleiro, controla os turnos e informa o resultado aos clientes.
 
@@ -8,7 +8,6 @@ Jogo da Velha para dois jogadores feito em Java com sockets TCP. O servidor é o
 .
 ├── Dockerfile
 ├── README.md
-├── instructions.md
 └── src
     ├── client
     │   └── Client.java
